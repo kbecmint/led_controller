@@ -1,17 +1,22 @@
 import datetime
 import json
 import os
-import RPi.GPIO as GPIO
+import requests
+from pathlib import Path
+# import RPi.GPIO as GPIO
 
 # GPIOピンの設定 (GPIO 17 = 物理11番ピン)
-LED_PIN = 17
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(LED_PIN, GPIO.OUT)
+# LED_PIN = 17
+# GPIO.setwarnings(False)
+# GPIO.setmode(GPIO.BCM)
+# GPIO.setup(LED_PIN, GPIO.OUT)
 
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_FILE = Path(os.environ.get("LED_CONFIG_FILE", BASE_DIR / "schedule_config.json"))
 days_map = {0: "mon", 1: "tue", 2: "wed", 3: "thu", 4: "fri", 5: "sat", 6: "sun"}
+
+on_url="http://localhost:5000/api/manual/on"
+off_url="http://localhost:5000/api/manual/off"
 
 if os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, "r") as f:
@@ -19,7 +24,8 @@ if os.path.exists(CONFIG_FILE):
 
     # 1. 「終日つけっぱなしモード（常時ON）」が有効な場合
     if config.get("always_on", False):
-        GPIO.output(LED_PIN, GPIO.HIGH)
+        res = requests.post(on_url)
+        # GPIO.output(LED_PIN, GPIO.HIGH)
         exit()
 
     now = datetime.datetime.now()
@@ -44,7 +50,9 @@ if os.path.exists(CONFIG_FILE):
 
     # 4. 指定時刻と一致したらON/OFFを切り替え
     if current_time_str == m_on or current_time_str == e_on:
-        GPIO.output(LED_PIN, GPIO.HIGH)
+        requests.post(on_url)
+        # GPIO.output(LED_PIN, GPIO.HIGH)
     elif current_time_str == m_off or current_time_str == e_off:
-        GPIO.output(LED_PIN, GPIO.LOW)
+        requests.post(off_url)
+        # GPIO.output(LED_PIN, GPIO.LOW)
 
